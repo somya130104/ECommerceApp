@@ -1,7 +1,9 @@
+// server.js
+
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import "dotenv/config";
+import dotenv from "dotenv";
 import { connectDB } from "./config/mongodb.js";
 import connectCloudinary from "./config/cloudinary.js";
 import userRouter from "./routes/userRoute.js";
@@ -9,27 +11,67 @@ import upload from "./middleware/multer.js";
 import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
-import dotenv from "dotenv";
+
+// Load environment variables from .env
 dotenv.config();
 
-
-//App Config
+// App configuration
 const app = express();
 const port = process.env.PORT || 4000;
-console.log("MongoDB URI:", process.env.MONGODB_URI);
+
+// Allowed origins for CORS (local + production)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174", // local dev frontend
+  "https://foreverfrontend-ten.vercel.app", // production frontend
+  "https://foreveradmin-two.vercel.app", // production admin
+];
+
+// Middleware
+app.use(express.json()); // Parse incoming JSON
+
+// CORS Configuration
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow requests like Postman or mobile
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.error(`❌ Blocked by CORS: ${origin}`);
+        callback(new Error("CORS Not Allowed"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+// Handle preflight requests
+app.options("*", cors());
+
+// Connect to MongoDB and Cloudinary
+console.log("🟡 Connecting to MongoDB...");
 connectDB();
+
+console.log("🟡 Connecting to Cloudinary...");
 connectCloudinary();
 
-//Middlewares
-app.use(express.json()); //This line is used to parse the JSON data that is sent to the server.
-app.use(cors()); //This line allows us the access the server from any IP.
+// Routes
+app.get("/", (req, res) => {
+  res.status(200).send("✅ Server is running successfully!");
+});
 
-//API Endpoints
-app.use("/api/user", userRouter); //This line tells Express.js that whenever a request starts with /api/user, it should be handled by userRouter
-app.use("/api/product", productRouter); //This line tells Express.js that whenever a request starts with /api/product, it should be handled by productRouter.
+app.get("/api/test-cors", (req, res) => {
+  res.json({ success: true, message: "✅ CORS is working fine!" });
+});
+
+app.use("/api/user", userRouter);
+app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
-app.get("/", (req, res) => res.status(200).send("Hello World"));
 
-//Listener
-app.listen(port, () => console.log(`Listening on localhost:${port}`));
+// Server listener
+app.listen(port, () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
+});
