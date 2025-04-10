@@ -23,7 +23,8 @@ const port = process.env.PORT || 4000;
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174", // local dev frontend
-  "https://foreverfrontend-ten.vercel.app", // production frontend
+  "https://foreverfrontend-ten.vercel.app",
+  "https://foreverfrontend-ten.vercel.app/", // production frontend
   "https://foreveradmin-two.vercel.app", // production admin
 ];
 
@@ -31,24 +32,15 @@ const allowedOrigins = [
 app.use(express.json()); // Parse incoming JSON
 
 // CORS Configuration
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow requests like Postman or mobile
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.error(`❌ Blocked by CORS: ${origin}`);
-        callback(new Error("CORS Not Allowed"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
+var corsOptions = {
+  origin: [
+    "https://foreverfrontend-ten.vercel.app",
+    "https://foreveradmin-two.vercel.app",
+  ],
+  optionsSuccessStatus: 200, // For legacy browser support
+};
 
-// Handle preflight requests
-app.options("*", cors());
+app.use(cors(corsOptions));
 
 // Connect to MongoDB and Cloudinary
 console.log("🟡 Connecting to MongoDB...");
